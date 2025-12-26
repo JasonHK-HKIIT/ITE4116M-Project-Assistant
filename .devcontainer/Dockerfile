@@ -11,5 +11,6 @@ ENV PYTHONUNBUFFERED 1
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 #     && apt-get -y install --no-install-recommends <your-package-list-here>
 
-
-
+RUN wget -O golang-migrate.deb https://github.com/golang-migrate/migrate/releases/download/v4.19.1/migrate.linux-amd64.deb && \
+    dpkg -i golang-migrate.deb && \
+    rm golang-migrate.deb
