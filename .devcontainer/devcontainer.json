@@ -10,7 +10,7 @@
 			"nodeGypDependencies": true,
 			"installYarnUsingApt": true,
 			"version": "20",
-			"pnpmVersion": "latest",
+			"pnpmVersion": "none",
 			"nvmVersion": "latest"
 		},
 		"ghcr.io/devcontainers-extra/features/poetry:2": {
