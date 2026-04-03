@@ -38,8 +38,15 @@ services:
       - .env
     volumes:
       - ./backend:/backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       POSTGRES_HOST: "postgres"
+      MYPORTAL_BACKEND_HOSTNAME: "${MYPORTAL_BACKEND_HOSTNAME:-host.docker.internal:8000}"
+      MYPORTAL_PUBLIC_BASE_URL: "${MYPORTAL_PUBLIC_BASE_URL:-}"
+      MYPORTAL_BACKEND_SCHEME: "${MYPORTAL_BACKEND_SCHEME:-http}"
+      MYPORTAL_NEWS_LIMIT: "${MYPORTAL_NEWS_LIMIT:-5}"
+      MYPORTAL_BACKEND_TIMEOUT: "${MYPORTAL_BACKEND_TIMEOUT:-8}"
     command:
       - --reload
   frontend:

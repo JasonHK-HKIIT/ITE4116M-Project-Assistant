@@ -24,6 +24,7 @@ from langchain_core.tools import Tool
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+from app.news_articles_tool import fetch_news_articles
 from app.upload import vstore
 
 
@@ -43,6 +44,10 @@ class DallEInput(BaseModel):
     query: Annotated[str, Field(description="image description to generate image from")]
 
 
+class NewsArticlesInput(BaseModel):
+    query: Annotated[str, Field(description="search query to look up")]
+
+
 class AvailableTools(str, Enum):
     ACTION_SERVER = "action_server_by_sema4ai"
     CONNERY = "ai_action_runner_by_connery"
@@ -57,6 +62,7 @@ class AvailableTools(str, Enum):
     PUBMED = "pubmed"
     WIKIPEDIA = "wikipedia"
     DALL_E = "dall_e"
+    NEWS_ARTICLES = "news_articles"
 
 
 class ToolConfig(TypedDict):
@@ -206,6 +212,14 @@ class DallE(BaseTool):
     ] = "Generates images from a text description using OpenAI's DALL-E model."
 
 
+class NewsArticles(BaseTool):
+    type: Literal[AvailableTools.NEWS_ARTICLES] = AvailableTools.NEWS_ARTICLES
+    name: Literal["News Articles"] = "News Articles"
+    description: Literal[
+        "Retrieve latest news and announcements by the Vocational Training Council (VTC) and its member institutions."
+    ] = "Retrieve latest news and announcements by the Vocational Training Council (VTC) and its member institutions."
+
+
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
 If the user is referencing particular files, that is often a good hint that information may be here.
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
@@ -310,6 +324,16 @@ def _get_dalle_tools():
     )
 
 
+@lru_cache(maxsize=5)
+def _get_news_articles():
+    return Tool(
+        "get_news_articles",
+        fetch_news_articles,
+        "Retrieve latest VTC news and announcements by keyword from the MyPortal backend.",
+        args_schema=NewsArticlesInput,
+    )
+
+
 TOOLS = {
     AvailableTools.CONNERY: _get_connery_actions,
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
@@ -322,4 +346,5 @@ TOOLS = {
     AvailableTools.WIKIPEDIA: _get_wikipedia,
     AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
     AvailableTools.DALL_E: _get_dalle_tools,
+    AvailableTools.NEWS_ARTICLES: _get_news_articles,
 }
