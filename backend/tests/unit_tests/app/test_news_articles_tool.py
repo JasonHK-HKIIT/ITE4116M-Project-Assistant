@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from app.news_articles_tool import fetch_news_articles
+from app.tools.news_articles import get_news_articles
 
 
 def test_fetch_news_articles_success(monkeypatch):
@@ -19,7 +19,7 @@ def test_fetch_news_articles_success(monkeypatch):
 
     monkeypatch.setattr("requests.get", lambda *args, **kwargs: mock_response)
 
-    result = fetch_news_articles("exam")
+    result = get_news_articles("exam")
 
     assert 'Latest news matching "exam":' in result
     assert "Exam Schedule Released (2026-04-01)" in result
@@ -33,7 +33,7 @@ def test_fetch_news_articles_handles_backend_error(monkeypatch):
 
     monkeypatch.setattr("requests.get", lambda *args, **kwargs: mock_response)
 
-    result = fetch_news_articles("portal")
+    result = get_news_articles("portal")
 
     assert "returned an error (503)" in result
 
@@ -45,7 +45,7 @@ def test_fetch_news_articles_handles_invalid_payload(monkeypatch):
 
     monkeypatch.setattr("requests.get", lambda *args, **kwargs: mock_response)
 
-    result = fetch_news_articles("notice")
+    result = get_news_articles("notice")
 
     assert "did not include a valid data list" in result
 
@@ -66,8 +66,8 @@ def test_fetch_news_articles_rewrites_links_with_public_base_url(monkeypatch):
     }
 
     monkeypatch.setattr("requests.get", lambda *args, **kwargs: mock_response)
-    monkeypatch.setenv("MYPORTAL_PUBLIC_BASE_URL", "https://portal.vtc.edu.hk")
+    monkeypatch.setenv("MYPORTAL_PUBLIC_ENDPOINT", "https://portal.vtc.edu.hk")
 
-    result = fetch_news_articles("exam")
+    result = get_news_articles("exam")
 
     assert "https://portal.vtc.edu.hk/news/exam-schedule" in result

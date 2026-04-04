@@ -24,7 +24,7 @@ from langchain_core.tools import Tool
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
-from app.news_articles_tool import fetch_news_articles
+from app.tools.news_articles import get_news_articles
 from app.upload import vstore
 
 
@@ -327,8 +327,8 @@ def _get_dalle_tools():
 @lru_cache(maxsize=5)
 def _get_news_articles():
     return Tool(
-        "get_news_articles",
-        fetch_news_articles,
+        "news_articles",
+        get_news_articles,
         "Retrieve latest VTC news and announcements by keyword from the MyPortal backend.",
         args_schema=NewsArticlesInput,
     )
