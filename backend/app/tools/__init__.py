@@ -20,11 +20,12 @@ from langchain_community.tools.tavily_search import (
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
-from langchain_core.tools import Tool
+from langchain_core.tools import StructuredTool, Tool
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from app.tools.news_articles import get_news_articles
+from app.tools.student_activities import get_student_activities
 from app.upload import vstore
 
 
@@ -48,6 +49,33 @@ class NewsArticlesInput(BaseModel):
     query: Annotated[str, Field(description="search query to look up")]
 
 
+class StudentActivitiesInput(BaseModel):
+    keyword: Annotated[
+        str | None,
+        Field(default=None, description="optional keyword to search student activities"),
+    ]
+    activity_type: Annotated[
+        str | None,
+        Field(default=None, description="optional activity type filter"),
+    ]
+    campus_id: Annotated[
+        int | None,
+        Field(default=None, description="optional campus ID filter"),
+    ]
+    discipline: Annotated[
+        str | None,
+        Field(default=None, description="optional discipline filter"),
+    ]
+    locale: Annotated[
+        str | None,
+        Field(default=None, description="optional locale filter, for example en or zh-HK"),
+    ]
+    limit: Annotated[
+        int | None,
+        Field(default=None, description="optional max number of results (1-20)"),
+    ]
+
+
 class AvailableTools(str, Enum):
     ACTION_SERVER = "action_server_by_sema4ai"
     CONNERY = "ai_action_runner_by_connery"
@@ -63,6 +91,7 @@ class AvailableTools(str, Enum):
     WIKIPEDIA = "wikipedia"
     DALL_E = "dall_e"
     NEWS_ARTICLES = "news_articles"
+    STUDENT_ACTIVITIES = "student_activities"
 
 
 class ToolConfig(TypedDict):
@@ -220,6 +249,14 @@ class NewsArticles(BaseTool):
     ] = "Retrieve latest news and announcements by the Vocational Training Council (VTC) and its member institutions."
 
 
+class StudentActivities(BaseTool):
+    type: Literal[AvailableTools.STUDENT_ACTIVITIES] = AvailableTools.STUDENT_ACTIVITIES
+    name: Literal["Student Activities"] = "Student Activities"
+    description: Literal[
+        "Retrieve active and upcoming student activities from the MyPortal backend by keyword and filters."
+    ] = "Retrieve active and upcoming student activities from the MyPortal backend by keyword and filters."
+
+
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
 If the user is referencing particular files, that is often a good hint that information may be here.
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
@@ -334,6 +371,16 @@ def _get_news_articles():
     )
 
 
+@lru_cache(maxsize=5)
+def _get_student_activities():
+    return StructuredTool.from_function(
+        func=get_student_activities,
+        name="student_activities",
+        description="Retrieve active and upcoming student activities by keyword and optional filters from the MyPortal backend.",
+        args_schema=StudentActivitiesInput,
+    )
+
+
 TOOLS = {
     AvailableTools.CONNERY: _get_connery_actions,
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
@@ -347,4 +394,5 @@ TOOLS = {
     AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
     AvailableTools.DALL_E: _get_dalle_tools,
     AvailableTools.NEWS_ARTICLES: _get_news_articles,
+    AvailableTools.STUDENT_ACTIVITIES: _get_student_activities,
 }
