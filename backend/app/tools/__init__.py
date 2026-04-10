@@ -22,10 +22,11 @@ from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_core.tools import StructuredTool, Tool
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from app.tools.news_articles import get_news_articles
 from app.tools.student_activities import get_student_activities
+from app.tools.user_profile import get_user_profile
 from app.upload import vstore
 
 
@@ -92,6 +93,7 @@ class AvailableTools(str, Enum):
     DALL_E = "dall_e"
     NEWS_ARTICLES = "news_articles"
     STUDENT_ACTIVITIES = "student_activities"
+    USER_PROFILE = "user_profile"
 
 
 class ToolConfig(TypedDict):
@@ -109,6 +111,11 @@ class BaseTool(BaseModel):
 class ActionServerConfig(ToolConfig):
     url: str
     api_key: str
+
+
+class UserProfileConfig(ToolConfig):
+    user_id: str
+    locale: NotRequired[str]
 
 
 class ActionServer(BaseTool):
@@ -257,6 +264,15 @@ class StudentActivities(BaseTool):
     ] = "Retrieve active and upcoming student activities from the MyPortal backend by keyword and filters."
 
 
+class UserProfile(BaseTool):
+    type: Literal[AvailableTools.USER_PROFILE] = AvailableTools.USER_PROFILE
+    name: Literal["User Profile"] = "User Profile"
+    description: Literal[
+        "Retrieve the configured user's profile from the MyPortal backend."
+    ] = "Retrieve the configured user's profile from the MyPortal backend."
+    config: UserProfileConfig
+
+
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
 If the user is referencing particular files, that is often a good hint that information may be here.
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
@@ -381,6 +397,15 @@ def _get_student_activities():
     )
 
 
+@lru_cache(maxsize=256)
+def _get_user_profile(user_id: str, locale: str | None = None):
+    return Tool(
+        "user_profile",
+        lambda _tool_input="": get_user_profile(user_id=user_id, locale=locale),
+        description="Retrieve the current user's profile from MyPortal.",
+    )
+
+
 TOOLS = {
     AvailableTools.CONNERY: _get_connery_actions,
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
@@ -395,4 +420,5 @@ TOOLS = {
     AvailableTools.DALL_E: _get_dalle_tools,
     AvailableTools.NEWS_ARTICLES: _get_news_articles,
     AvailableTools.STUDENT_ACTIVITIES: _get_student_activities,
+    AvailableTools.USER_PROFILE: _get_user_profile,
 }

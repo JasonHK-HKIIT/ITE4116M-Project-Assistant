@@ -38,6 +38,7 @@ from app.tools import (
     SecFilings,
     Tavily,
     TavilyAnswer,
+    UserProfile,
     Wikipedia,
     YouSearch,
     get_retrieval_tool,
@@ -60,6 +61,7 @@ Tool = Union[
     DallE,
     NewsArticles,
     StudentActivities,
+    UserProfile,
 ]
 
 
