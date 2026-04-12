@@ -27,6 +27,7 @@ from typing_extensions import NotRequired, TypedDict
 from app.tools.news_articles import get_news_articles
 from app.tools.student_activities import get_student_activities
 from app.tools.timetable import get_timetable
+from app.tools.current_time import get_current_time
 from app.tools.user_profile import get_user_profile
 from app.upload import vstore
 
@@ -107,6 +108,7 @@ class AvailableTools(str, Enum):
     STUDENT_ACTIVITIES = "student_activities"
     USER_PROFILE = "user_profile"
     TIMETABLE = "timetable"
+    CURRENT_TIME = "current_time"
 
 
 class ToolConfig(TypedDict):
@@ -299,6 +301,14 @@ class Timetable(BaseTool):
     config: TimetableConfig
 
 
+class CurrentTime(BaseTool):
+    type: Literal[AvailableTools.CURRENT_TIME] = AvailableTools.CURRENT_TIME
+    name: Literal["Current Time"] = "Current Time"
+    description: Literal[
+        "Returns the current date and time in +08:00 format without timezone suffix."
+    ] = "Returns the current date and time in +08:00 format without timezone suffix."
+
+
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
 If the user is referencing particular files, that is often a good hint that information may be here.
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
@@ -446,6 +456,15 @@ def _get_timetable(user_id: str):
     )
 
 
+@lru_cache(maxsize=1)
+def _get_current_time():
+    return Tool(
+        "current_time",
+        lambda _tool_input="": get_current_time(),
+        description="Returns the current date and time in +08:00 format without timezone suffix.",
+    )
+
+
 TOOLS = {
     AvailableTools.CONNERY: _get_connery_actions,
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
@@ -462,4 +481,5 @@ TOOLS = {
     AvailableTools.STUDENT_ACTIVITIES: _get_student_activities,
     AvailableTools.USER_PROFILE: _get_user_profile,
     AvailableTools.TIMETABLE: _get_timetable,
+    AvailableTools.CURRENT_TIME: _get_current_time,
 }
