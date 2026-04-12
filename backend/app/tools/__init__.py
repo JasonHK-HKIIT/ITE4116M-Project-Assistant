@@ -26,6 +26,7 @@ from typing_extensions import NotRequired, TypedDict
 
 from app.tools.news_articles import get_news_articles
 from app.tools.student_activities import get_student_activities
+from app.tools.timetable import get_timetable
 from app.tools.user_profile import get_user_profile
 from app.upload import vstore
 
@@ -77,6 +78,17 @@ class StudentActivitiesInput(BaseModel):
     ]
 
 
+class TimetableInput(BaseModel):
+    start_date: Annotated[
+        str | None,
+        Field(default=None, description="optional start date in YYYY-MM-DD format"),
+    ]
+    end_date: Annotated[
+        str | None,
+        Field(default=None, description="optional end date in YYYY-MM-DD format"),
+    ]
+
+
 class AvailableTools(str, Enum):
     ACTION_SERVER = "action_server_by_sema4ai"
     CONNERY = "ai_action_runner_by_connery"
@@ -94,6 +106,7 @@ class AvailableTools(str, Enum):
     NEWS_ARTICLES = "news_articles"
     STUDENT_ACTIVITIES = "student_activities"
     USER_PROFILE = "user_profile"
+    TIMETABLE = "timetable"
 
 
 class ToolConfig(TypedDict):
@@ -116,6 +129,10 @@ class ActionServerConfig(ToolConfig):
 class UserProfileConfig(ToolConfig):
     user_id: str
     locale: NotRequired[str]
+
+
+class TimetableConfig(ToolConfig):
+    user_id: str
 
 
 class ActionServer(BaseTool):
@@ -273,6 +290,15 @@ class UserProfile(BaseTool):
     config: UserProfileConfig
 
 
+class Timetable(BaseTool):
+    type: Literal[AvailableTools.TIMETABLE] = AvailableTools.TIMETABLE
+    name: Literal["Timetable"] = "Timetable"
+    description: Literal[
+        "Retrieve the configured user's timetable events and holiday from the MyPortal backend."
+    ] = "Retrieve the configured user's timetable events and holiday from the MyPortal backend."
+    config: TimetableConfig
+
+
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
 If the user is referencing particular files, that is often a good hint that information may be here.
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
@@ -406,6 +432,20 @@ def _get_user_profile(user_id: str, locale: str | None = None):
     )
 
 
+@lru_cache(maxsize=256)
+def _get_timetable(user_id: str):
+    return StructuredTool.from_function(
+        func=lambda start_date=None, end_date=None: get_timetable(
+            user_id=user_id,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+        name="timetable",
+        description="Retrieve the current user's timetable events and holiday from MyPortal.",
+        args_schema=TimetableInput,
+    )
+
+
 TOOLS = {
     AvailableTools.CONNERY: _get_connery_actions,
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
@@ -421,4 +461,5 @@ TOOLS = {
     AvailableTools.NEWS_ARTICLES: _get_news_articles,
     AvailableTools.STUDENT_ACTIVITIES: _get_student_activities,
     AvailableTools.USER_PROFILE: _get_user_profile,
+    AvailableTools.TIMETABLE: _get_timetable,
 }

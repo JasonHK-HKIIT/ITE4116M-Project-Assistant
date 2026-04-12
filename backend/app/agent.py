@@ -36,6 +36,7 @@ from app.tools import (
     Retrieval,
     StudentActivities,
     SecFilings,
+    Timetable,
     Tavily,
     TavilyAnswer,
     UserProfile,
@@ -62,6 +63,7 @@ Tool = Union[
     NewsArticles,
     StudentActivities,
     UserProfile,
+    Timetable,
 ]
 
 
